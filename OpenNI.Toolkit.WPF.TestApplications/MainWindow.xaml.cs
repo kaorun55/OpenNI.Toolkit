@@ -13,6 +13,7 @@ using System.Windows.Navigation;
 using System.Windows.Shapes;
 using System.Threading;
 using System.Windows.Threading;
+using OpenNI.Toolkit.WPF;
 
 namespace OpenNI.Toolkit.WPF.TestApplications
 {
@@ -21,6 +22,8 @@ namespace OpenNI.Toolkit.WPF.TestApplications
     /// </summary>
     public partial class MainWindow : Window
     {
+        ImageGenerator image;
+
         private Thread readerThread;
         private bool shouldRun;
 
@@ -30,7 +33,7 @@ namespace OpenNI.Toolkit.WPF.TestApplications
             try {
                 ScriptNode node;
                 Context context = Context.CreateFromXmlFile( "SamplesConfig.xml", out node );
-                ImageGenerator image = context.FindExistingNode( NodeType.Image ) as ImageGenerator;
+                image = context.FindExistingNode( NodeType.Image ) as ImageGenerator;
 
                 // 画像更新のためのスレッドを作成
                 shouldRun = true;
@@ -49,12 +52,18 @@ namespace OpenNI.Toolkit.WPF.TestApplications
                 readerThread.Start();
             }
             catch ( Exception ex ) {
+                MessageBox.Show( ex.Message );
             }
         }
 
         private void Window_Closing( object sender, System.ComponentModel.CancelEventArgs e )
         {
             shouldRun = false;
+        }
+
+        private void buttonSave_Click( object sender, RoutedEventArgs e )
+        {
+            image.ToBitmapSource().Save( "image.png", ImageFormat.Png );
         }
     }
 }

@@ -4,5 +4,6 @@
         Title="MainWindow" Height="350" Width="525" Closing="Window_Closing">
     <Grid>
         <Image Height="240" HorizontalAlignment="Left" Margin="12,12,0,0" Name="imageRgb" Stretch="Fill" VerticalAlignment="Top" Width="320" />
+        <Button Content="Save" Height="23" HorizontalAlignment="Left" Margin="12,268,0,0" Name="buttonSave" VerticalAlignment="Top" Width="75" Click="buttonSave_Click" />
     </Grid>
 </Window>
