@@ -17,53 +17,109 @@ using OpenNI.Toolkit.WPF;
 
 namespace OpenNI.Toolkit.WPF.TestApplications
 {
+    public sealed class VideoFrameReadyEventArgs : EventArgs
+    {
+        public ImageGenerator ImageGenerator
+        {
+            get;
+            set;
+        }
+    }
+
+    public class Xtion
+    {
+        private Context context;
+        private DepthGenerator depth;
+        private UserGenerator user;
+
+        public event EventHandler<VideoFrameReadyEventArgs> VideoFrameReady;
+
+
+        private Thread readerThread;
+        private bool shouldRun = true;
+
+        public Xtion( string xmlFile )
+        {
+            ScriptNode script;
+            context = Context.CreateFromXmlFile( "SamplesConfig.xml", out script );
+
+            foreach ( var node in context.EnumerateExistingNodes() ) {
+                if ( node.Instance is ImageGenerator ) {
+                    ImageGenrator = node.Instance as ImageGenerator;
+                }
+                else if ( node.Instance is DepthGenerator ) {
+                    depth = node.Instance as DepthGenerator;
+                }
+            }
+
+            // 画像更新のためのスレッドを作成
+            shouldRun = true;
+            readerThread = new Thread( new ThreadStart( () =>
+            {
+                while ( shouldRun ) {
+                    context.WaitAndUpdateAll();
+
+                    if ( VideoFrameReady != null ) {
+                        VideoFrameReady( this, new VideoFrameReadyEventArgs()
+                        {
+                            ImageGenerator = ImageGenrator
+                        } );
+                    }
+                }
+            } ) );
+            readerThread.Start();
+        }
+
+        ~Xtion()
+        {
+            shouldRun = false;
+            readerThread.Join();
+        }
+
+        public ImageGenerator ImageGenrator
+        {
+            get;
+            private set;
+        }
+    }
+
     /// <summary>
     /// MainWindow.xaml の相互作用ロジック
     /// </summary>
     public partial class MainWindow : Window
     {
-        ImageGenerator image;
-
-        private Thread readerThread;
-        private bool shouldRun;
+        Xtion xtion;
 
         public MainWindow()
         {
             InitializeComponent();
-            try {
-                ScriptNode node;
-                Context context = Context.CreateFromXmlFile( "SamplesConfig.xml", out node );
-                image = context.FindExistingNode( NodeType.Image ) as ImageGenerator;
 
-                // 画像更新のためのスレッドを作成
-                shouldRun = true;
-                readerThread = new Thread( new ThreadStart( () =>
-                {
-                    while ( shouldRun ) {
-                        context.WaitAndUpdateAll();
-
-                        // ImageMetaDataをBitmapSourceに変換する(unsafeにしなくてもOK!!)
-                        this.Dispatcher.BeginInvoke( DispatcherPriority.Background, new Action( () =>
-                        {
-                            imageRgb.Source = image.ToBitmapSource();
-                        } ) );
-                    }
-                } ) );
-                readerThread.Start();
+            try 
+            {
+                xtion = new Xtion( "SamplesConfig.xml" );
+                xtion.VideoFrameReady += new EventHandler<VideoFrameReadyEventArgs>( xtion_VideoFrameReady );
             }
             catch ( Exception ex ) {
                 MessageBox.Show( ex.Message );
             }
         }
 
+        void xtion_VideoFrameReady( object sender, VideoFrameReadyEventArgs e )
+        {
+            // ImageMetaDataをBitmapSourceに変換する(unsafeにしなくてもOK!!)
+            this.Dispatcher.BeginInvoke( DispatcherPriority.Background, new Action( () =>
+            {
+                imageRgb.Source = e.ImageGenerator.ToBitmapSource();
+            } ) );
+        }
+
         private void Window_Closing( object sender, System.ComponentModel.CancelEventArgs e )
         {
-            shouldRun = false;
         }
 
         private void buttonSave_Click( object sender, RoutedEventArgs e )
         {
-            image.ToBitmapSource().Save( "image.png", ImageFormat.Png );
+            xtion.ImageGenrator.ToBitmapSource().Save( "image.png", ImageFormat.Png );
         }
     }
 }
