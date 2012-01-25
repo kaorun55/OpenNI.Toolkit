@@ -54,9 +54,10 @@
       </Configuration>
     </Node>
 
+    <Node type="User" />
+
     <!-- Uncomment nodes from here if you need them.
 		<Node type="Audio" />
-		<Node type="User" />
 		<Node type="Hands" />
 		<Node type="Gesture" />
 		<Node type="Scene" />

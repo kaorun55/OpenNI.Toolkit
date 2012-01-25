@@ -1,9 +1,11 @@
 ﻿<Window x:Class="OpenNI.Toolkit.WPF.TestApplications.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="MainWindow" Height="350" Width="525" Closing="Window_Closing">
+        Title="MainWindow" Height="350" Width="731" Closing="Window_Closing">
     <Grid>
         <Image Height="240" HorizontalAlignment="Left" Margin="12,12,0,0" Name="imageRgb" Stretch="Fill" VerticalAlignment="Top" Width="320" />
         <Button Content="Save" Height="23" HorizontalAlignment="Left" Margin="12,268,0,0" Name="buttonSave" VerticalAlignment="Top" Width="75" Click="buttonSave_Click" />
+        <Image Height="240" HorizontalAlignment="Left" Margin="346,12,0,0" Name="imageDepth" Stretch="Fill" VerticalAlignment="Top" Width="320" />
+        <Canvas Height="240" HorizontalAlignment="Left" Margin="346,12,0,0" Name="canvas1" VerticalAlignment="Top" Width="320" />
     </Grid>
 </Window>
