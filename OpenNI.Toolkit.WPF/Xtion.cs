@@ -7,6 +7,15 @@ using System.Diagnostics;
 
 namespace OpenNI.Toolkit.WPF
 {
+    public static class SkeletonExtension
+    {
+        public static Point3D ScaleTo( this Point3D point, int width, int height )
+        {
+            return new Point3D( (point.X * width) / 640, (point.Y * height) / 480, point.Z );
+        }
+    } 
+
+
     public sealed class VideoFrameReadyEventArgs : EventArgs
     {
         public ImageGenerator ImageGenerator
