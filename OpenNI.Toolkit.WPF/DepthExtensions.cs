@@ -1,9 +1,9 @@
-﻿using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using OpenNI;
-using System.IO;
-using System.Runtime.InteropServices;
+﻿// thans : http://c4fkinect.codeplex.com/
+
 using System;
+using System.Runtime.InteropServices;
+using System.Windows.Media;
+using System.Windows.Media.Imaging;
 
 namespace OpenNI.Toolkit.WPF
 {

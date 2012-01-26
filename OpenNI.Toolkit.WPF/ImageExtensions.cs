@@ -1,7 +1,5 @@
 ﻿using System.Windows.Media;
 using System.Windows.Media.Imaging;
-using OpenNI;
-using System.IO;
 
 namespace OpenNI.Toolkit.WPF
 {

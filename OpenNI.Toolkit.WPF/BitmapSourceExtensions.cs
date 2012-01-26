@@ -8,7 +8,6 @@
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Security;
-using System.Windows.Media;
 using System.Windows.Media.Imaging;
 
 namespace OpenNI.Toolkit.WPF

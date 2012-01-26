@@ -1,62 +1,10 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading;
 using System.Diagnostics;
-using System.IO;
 using System.Reflection;
+using System.Threading;
 
 namespace OpenNI.Toolkit.WPF
 {
-    public static class SkeletonExtension
-    {
-        public static Point3D ScaleTo( this Point3D point, DepthGenerator depth,  int width, int height )
-        {
-            return new Point3D( (point.X * width) / depth.MapOutputMode.XRes, (point.Y * height) / depth.MapOutputMode.YRes, point.Z );
-        }
-    } 
-
-
-    public sealed class VideoFrameReadyEventArgs : EventArgs
-    {
-        public ImageGenerator ImageGenerator
-        {
-            get;
-            set;
-        }
-    }
-
-    public sealed class DepthFrameReadyEventArgs : EventArgs
-    {
-        public DepthGenerator DepthGenerator
-        {
-            get;
-            set;
-        }
-    }
-
-    public sealed class SkeletonFrameReadyEventArgs : EventArgs
-    {
-        public SkeletonCapability Skeleton
-        {
-            get;
-            set;
-        }
-
-        public int[] Users
-        {
-            get;
-            set;
-        }
-
-        public DepthGenerator DepthGenerator
-        {
-            get;
-            set;
-        }
-    }
-
     public class Xtion
     {
         private Context context;
@@ -67,6 +15,10 @@ namespace OpenNI.Toolkit.WPF
 
         private Thread readerThread;
         private bool shouldRun = true;
+
+        private const int Width = 640;
+        private const int Height = 480;
+        private const int FPS = 30;
 
         public Xtion()
         {
@@ -79,18 +31,18 @@ namespace OpenNI.Toolkit.WPF
             Image.NewDataAvailable += new EventHandler( ImageGenrator_NewDataAvailable );
             Image.MapOutputMode = new MapOutputMode()
             {
-                XRes = 640,
-                YRes = 480,
-                FPS = 30
+                XRes = Width,
+                YRes = Height,
+                FPS = FPS
             };
 
             Depth = new DepthGenerator( context );
             Depth.NewDataAvailable += new EventHandler( DepthGenerator_NewDataAvailable );
             Depth.MapOutputMode = new MapOutputMode()
             {
-                 XRes = 640,
-                 YRes = 480,
-                 FPS = 30
+                XRes = Width,
+                YRes = Height,
+                FPS = FPS
             };
 
             User = new UserGenerator( context );
@@ -150,7 +102,6 @@ namespace OpenNI.Toolkit.WPF
 
         void UserGenerator_NewDataAvailable( object sender, EventArgs e )
         {
-            // 骨格の描画
             var users = User.GetUsers();
             if ( (SkeletonFrameReady != null) && (users.Length != 0) ) {
                 SkeletonFrameReady( this, new SkeletonFrameReadyEventArgs()
