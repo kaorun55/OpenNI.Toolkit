@@ -30,7 +30,7 @@ namespace OpenNI.Toolkit.WPF.TestApplications
 
             try 
             {
-                xtion = new Xtion( "SamplesConfig.xml" );
+                xtion = new Xtion();
                 xtion.VideoFrameReady += new EventHandler<VideoFrameReadyEventArgs>( xtion_VideoFrameReady );
                 xtion.DepthFrameReady += new EventHandler<DepthFrameReadyEventArgs>( xtion_DepthFrameReady );
                 xtion.SkeletonFrameReady += new EventHandler<SkeletonFrameReadyEventArgs>( xtion_SkeletonFrameReady );
@@ -58,6 +58,7 @@ namespace OpenNI.Toolkit.WPF.TestApplications
 
                         var joint = e.Skeleton.GetSkeletonJoint( u, s );
                         var point = e.DepthGenerator.ConvertRealWorldToProjective( joint.Position.Position );
+                        point  = point.ScaleTo( e.DepthGenerator, 320, 240 );
 
                         const int dimeter = 10;
                         const int r = dimeter / 2;
@@ -96,7 +97,7 @@ namespace OpenNI.Toolkit.WPF.TestApplications
 
         private void buttonSave_Click( object sender, RoutedEventArgs e )
         {
-            xtion.ImageGenrator.ToBitmapSource().Save( "image.png", ImageFormat.Png );
+            xtion.Image.ToBitmapSource().Save( "image.png", ImageFormat.Png );
         }
     }
 }

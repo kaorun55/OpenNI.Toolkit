@@ -97,12 +97,6 @@
     <AppDesigner Include="Properties\" />
   </ItemGroup>
   <ItemGroup>
-    <Content Include="SamplesConfig.xml">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      <SubType>Designer</SubType>
-    </Content>
-  </ItemGroup>
-  <ItemGroup>
     <ProjectReference Include="..\OpenNI.Toolkit.WPF\OpenNI.Toolkit.WPF.csproj">
       <Project>{7E64C16D-4839-4B22-910E-6F049EFD317D}</Project>
       <Name>OpenNI.Toolkit.WPF</Name>

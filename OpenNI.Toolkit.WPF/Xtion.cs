@@ -4,14 +4,16 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Diagnostics;
+using System.IO;
+using System.Reflection;
 
 namespace OpenNI.Toolkit.WPF
 {
     public static class SkeletonExtension
     {
-        public static Point3D ScaleTo( this Point3D point, int width, int height )
+        public static Point3D ScaleTo( this Point3D point, DepthGenerator depth,  int width, int height )
         {
-            return new Point3D( (point.X * width) / 640, (point.Y * height) / 480, point.Z );
+            return new Point3D( (point.X * width) / depth.MapOutputMode.XRes, (point.Y * height) / depth.MapOutputMode.YRes, point.Z );
         }
     } 
 
@@ -66,39 +68,47 @@ namespace OpenNI.Toolkit.WPF
         private Thread readerThread;
         private bool shouldRun = true;
 
-        public Xtion( string xmlFile )
+        public Xtion()
         {
-            ScriptNode script;
-            context = Context.CreateFromXmlFile( xmlFile, out script );
+            Trace.WriteLine( Assembly.GetExecutingAssembly().FullName );
 
-            foreach ( var node in context.EnumerateExistingNodes() ) {
-                if ( node.Instance is ImageGenerator ) {
-                    ImageGenrator = node.Instance as ImageGenerator;
-                    ImageGenrator.NewDataAvailable += new EventHandler( ImageGenrator_NewDataAvailable );
-                }
-                else if ( node.Instance is DepthGenerator ) {
-                    DepthGenerator = node.Instance as DepthGenerator;
-                    DepthGenerator.NewDataAvailable += new EventHandler( DepthGenerator_NewDataAvailable );
-                }
-                else if ( node.Instance is UserGenerator ) {
-                    UserGenerator = node.Instance as UserGenerator;
-                    UserGenerator.NewUser += new EventHandler<NewUserEventArgs>( UserGenerator_NewUser );
-                    UserGenerator.LostUser += new EventHandler<UserLostEventArgs>( UserGenerator_LostUser );
-                    UserGenerator.UserExit += new EventHandler<UserExitEventArgs>( UserGenerator_UserExit );
-                    UserGenerator.UserReEnter += new EventHandler<UserReEnterEventArgs>( UserGenerator_UserReEnter );
+            context = new Context();
+            context.GlobalMirror = true;
 
-                    UserGenerator.NewDataAvailable += new EventHandler( UserGenerator_NewDataAvailable );
+            Image = new ImageGenerator( context );
+            Image.NewDataAvailable += new EventHandler( ImageGenrator_NewDataAvailable );
+            Image.MapOutputMode = new MapOutputMode()
+            {
+                XRes = 640,
+                YRes = 480,
+                FPS = 30
+            };
 
-                    Skeleton = UserGenerator.SkeletonCapability;
-                    if ( Skeleton.DoesNeedPoseForCalibration ) {
-                        throw new Exception( "OpenNI 1.4.0.2 以降をインストールしてください" );
-                    }
+            Depth = new DepthGenerator( context );
+            Depth.NewDataAvailable += new EventHandler( DepthGenerator_NewDataAvailable );
+            Depth.MapOutputMode = new MapOutputMode()
+            {
+                 XRes = 640,
+                 YRes = 480,
+                 FPS = 30
+            };
 
-                    Skeleton.CalibrationComplete += new EventHandler<CalibrationProgressEventArgs>( Skeleton_CalibrationComplete );
-                    Skeleton.SetSkeletonProfile( SkeletonProfile.HeadAndHands );
-                    Skeleton.SetSmoothing( 0.7f );
-                }
+            User = new UserGenerator( context );
+            User.NewUser += new EventHandler<NewUserEventArgs>( UserGenerator_NewUser );
+            User.LostUser += new EventHandler<UserLostEventArgs>( UserGenerator_LostUser );
+            User.UserExit += new EventHandler<UserExitEventArgs>( UserGenerator_UserExit );
+            User.UserReEnter += new EventHandler<UserReEnterEventArgs>( UserGenerator_UserReEnter );
+
+            User.NewDataAvailable += new EventHandler( UserGenerator_NewDataAvailable );
+
+            Skeleton = User.SkeletonCapability;
+            if ( Skeleton.DoesNeedPoseForCalibration ) {
+                throw new Exception( "OpenNI 1.4.0.2 以降をインストールしてください" );
             }
+
+            Skeleton.CalibrationComplete += new EventHandler<CalibrationProgressEventArgs>( Skeleton_CalibrationComplete );
+            Skeleton.SetSkeletonProfile( SkeletonProfile.HeadAndHands );
+            Skeleton.SetSmoothing( 0.7f );
 
             // 画像更新のためのスレッドを作成
             shouldRun = true;
@@ -109,6 +119,8 @@ namespace OpenNI.Toolkit.WPF
                 }
             } ) );
             readerThread.Start();
+
+            context.StartGeneratingAll();
         }
 
         ~Xtion()
@@ -118,10 +130,10 @@ namespace OpenNI.Toolkit.WPF
 
         void DepthGenerator_NewDataAvailable( object sender, EventArgs e )
         {
-            if ( (DepthFrameReady != null) && (DepthGenerator.IsDataNew) ) {
+            if ( (DepthFrameReady != null) && (Depth.IsDataNew) ) {
                 DepthFrameReady( this, new DepthFrameReadyEventArgs()
                 {
-                    DepthGenerator = DepthGenerator
+                    DepthGenerator = Depth
                 } );
             }
         }
@@ -131,7 +143,7 @@ namespace OpenNI.Toolkit.WPF
             if ( VideoFrameReady != null ) {
                 VideoFrameReady( this, new VideoFrameReadyEventArgs()
                 {
-                    ImageGenerator = ImageGenrator
+                    ImageGenerator = Image
                 } );
             }
         }
@@ -139,13 +151,13 @@ namespace OpenNI.Toolkit.WPF
         void UserGenerator_NewDataAvailable( object sender, EventArgs e )
         {
             // 骨格の描画
-            var users = UserGenerator.GetUsers();
+            var users = User.GetUsers();
             if ( (SkeletonFrameReady != null) && (users.Length != 0) ) {
                 SkeletonFrameReady( this, new SkeletonFrameReadyEventArgs()
                 {
                     Skeleton = Skeleton,
                     Users = users,
-                    DepthGenerator = DepthGenerator,
+                    DepthGenerator = Depth,
                 } );
             }
         }
@@ -167,7 +179,7 @@ namespace OpenNI.Toolkit.WPF
 
         void UserGenerator_NewUser( object sender, NewUserEventArgs e )
         {
-            Trace.WriteLine( System.Reflection.MethodBase.GetCurrentMethod().Name );
+            Trace.WriteLine( System.Reflection.MethodBase.GetCurrentMethod().Name + " New!!" );
             if ( Skeleton.IsCalibrating( e.ID ) ) {
                 Skeleton.AbortCalibration( e.ID );
             }
@@ -195,19 +207,19 @@ namespace OpenNI.Toolkit.WPF
             }
         }
 
-        public ImageGenerator ImageGenrator
+        public ImageGenerator Image
         {
             get;
             private set;
         }
 
-        public DepthGenerator DepthGenerator
+        public DepthGenerator Depth
         {
             get;
             private set;
         }
 
-        public UserGenerator UserGenerator
+        public UserGenerator User
         {
             get;
             private set;
